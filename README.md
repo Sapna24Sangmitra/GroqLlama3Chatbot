@@ -9,3 +9,5 @@ Features:
 4. File contents are included in the chat prompt to provide context for responses.
 
 My First Streamlit GenAI App 😊
+
+![image](https://github.com/user-attachments/assets/bb6336bc-dbe3-4482-80e4-1cf5d048cb05)
