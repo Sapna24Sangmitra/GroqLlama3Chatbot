@@ -60,6 +60,23 @@ if uploaded_file is not None:
                 f"({len(st.session_state.rag_chunks)} total)"
             )
 
+def stream_response(stream):
+    """Yield text tokens from a Groq streaming response."""
+    for chunk in stream:
+        token = chunk.choices[0].delta.content
+        if token:
+            yield token
+
+
+# --- Display existing chat history ---
+for message in st.session_state.chat_history:
+    if message["role"] == "user":
+        with st.chat_message("user"):
+            st.write(message["content"])
+    elif message["role"] == "assistant":
+        with st.chat_message("assistant"):
+            st.write(message["content"])
+
 # --- Chat input ---
 user_input = st.chat_input("Ask me anything!!!")
 
@@ -93,24 +110,22 @@ if user_input:
 
     messages.append({"role": "user", "content": user_input})
 
-    chat_completion = client.chat.completions.create(
-        messages=messages,
-        model="llama3-8b-8192",
-    )
+    # Show user message immediately
+    with st.chat_message("user"):
+        st.write(user_input)
 
-    assistant_reply = chat_completion.choices[0].message.content
+    # Stream assistant response token by token
+    with st.chat_message("assistant"):
+        stream = client.chat.completions.create(
+            messages=messages,
+            model="llama3-8b-8192",
+            stream=True,
+        )
+        assistant_reply = st.write_stream(stream_response(stream))
 
+    # Persist both turns to history
     st.session_state.chat_history.append({"role": "user", "content": user_input})
     st.session_state.chat_history.append({"role": "assistant", "content": assistant_reply})
-
-# --- Display chat history ---
-for message in st.session_state.chat_history:
-    if message["role"] == "user":
-        with st.chat_message("user"):
-            st.write(message["content"])
-    elif message["role"] == "assistant":
-        with st.chat_message("assistant"):
-            st.write(message["content"])
 
 # --- Fixed footer ---
 st.markdown(
