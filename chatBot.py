@@ -114,14 +114,20 @@ if user_input:
     with st.chat_message("user"):
         st.write(user_input)
 
-    # Stream assistant response token by token
+    # Stream assistant response token by token and capture the final text
+    stream = client.chat.completions.create(
+        messages=messages,
+        model="llama3-8b-8192",
+        stream=True,
+    )
+    full_reply = ""
     with st.chat_message("assistant"):
-        stream = client.chat.completions.create(
-            messages=messages,
-            model="llama3-8b-8192",
-            stream=True,
-        )
-        assistant_reply = st.write_stream(stream_response(stream))
+        placeholder = st.empty()
+        for token in stream_response(stream):
+            full_reply += token
+            # update UI incrementally
+            placeholder.write(full_reply)
+    assistant_reply = full_reply
 
     # Persist both turns to history
     st.session_state.chat_history.append({"role": "user", "content": user_input})
